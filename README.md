@@ -25,11 +25,11 @@ Operacje zmieniające uwierzytelnianie są celowo poza zakresem tego narzędzia.
 
 ## Budowanie obrazu ISO
 
-Obraz jest systemem Debian Live, a jego konfiguracja korzysta z narzędzia
-`live-build`, które jest pakietem Debiana. Bezpośrednie budowanie jest
-przewidziane na Debianie lub Ubuntu z dostępem do repozytoriów Debiana.
-Instrukcje poniżej nie zakładają, że można zainstalować `live-build` z
-repozytoriów innych dystrybucji.
+Obraz jest systemem Debian Live, a konfiguracja korzysta z `live-build`.
+Zalecanym i wspieranym środowiskiem budowania jest Debian Bookworm. Skrypt
+sprawdza, czy zainstalowany `live-build` obsługuje opcję `--bootloaders`,
+wymaganą do przygotowania rozruchu BIOS i UEFI, i zatrzymuje się z czytelnym
+komunikatem, jeśli wersja jest za stara.
 
 ```sh
 sudo apt update
@@ -39,12 +39,13 @@ sudo ./build.sh
 
 ### Budowanie z Arch Linux, CachyOS, Fedory i innych dystrybucji
 
-Nie trzeba zmieniać systemu na komputerze. Uruchom Debiana w maszynie
+Nie trzeba zmieniać systemu na komputerze. Uruchom Debiana Bookworm w maszynie
 wirtualnej (zalecane) albo na innym komputerze, skopiuj do niego cały katalog
 projektu i wykonaj powyższe polecenia w Debianie. W Arch Linux/CachyOS pakiet
 `live-build` może nie być dostępny w skonfigurowanych repozytoriach pacmana;
 `squashfs-tools` i `libisoburn` (dostawca `xorriso`) nie zastępują
-`live-build` ani `debootstrap`.
+`live-build` ani `debootstrap`. Pakiet `live-build` dostępny w Ubuntu może
+być za stary i nie obsługiwać wymaganej opcji `--bootloaders`.
 
 Możesz użyć dowolnego oprogramowania do wirtualizacji dostępnego dla swojej
 dystrybucji. W maszynie wirtualnej z Debianem:
@@ -64,13 +65,13 @@ zbuduje.
 
 Skrypt budujący jawnie uruchamia `auto/config` przez `sh`, więc nie wymaga,
 aby system zachował bit wykonywalności tego pliku po pobraniu archiwum ZIP.
-Konfiguracja wybiera dystrybucję Debian Bookworm określoną przez projekt,
-zamiast przypadkowych ustawień hosta.
-Jeśli log nadal pokazuje inną dystrybucję lub wydanie (np. Ubuntu `precise`),
-sprawdź ustawienia live-build w `/etc/live/build.conf` i upewnij się, że
-używasz aktualnego `build.sh` oraz `auto/config` z projektu. Po wcześniejszej
-nieudanej próbie można usunąć wygenerowane pliki/cache live-build, uruchamiając
-w katalogu projektu `sudo lb clean --purge`, a następnie ponowić
+Konfiguracja wybiera Debian Bookworm zamiast przypadkowych ustawień hosta.
+Jeśli log pokazuje `unrecognized option '--bootloaders'`, zainstalowany
+`live-build` jest za stary: zbuduj projekt w maszynie wirtualnej z Debianem
+Bookworm. Nie usuwaj `--bootloaders` z konfiguracji, ponieważ jest potrzebne
+do utworzenia obrazu obsługującego BIOS i UEFI. Po wcześniejszej nieudanej
+próbie można usunąć wygenerowane pliki/cache live-build, uruchamiając w
+katalogu projektu `sudo lb clean --purge`, a następnie ponowić
 `sudo ./build.sh`.
 
 Wynikiem jest hybrydowy obraz `proxmox-recovery-toolkit-amd64.iso` w katalogu

@@ -18,7 +18,7 @@ done
 mkdir -p config/includes.chroot/usr/local/lib/python3/dist-packages/proxmox_recovery
 cp -a src/proxmox_recovery/. config/includes.chroot/usr/local/lib/python3/dist-packages/proxmox_recovery/
 
-lb config
+./auto/config
 lb build
 
 image="live-image-amd64.hybrid.iso"

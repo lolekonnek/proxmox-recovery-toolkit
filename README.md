@@ -62,6 +62,15 @@ zainstalowanie pakietów o podobnych nazwach z repozytorium danej dystrybucji
 nie gwarantuje, że `live-build` będzie dostępny lub że obraz poprawnie się
 zbuduje.
 
+Skrypt budujący jawnie uruchamia `auto/config`, aby użyć dystrybucji Debian
+Bookworm określonej przez projekt zamiast przypadkowych ustawień hosta.
+Jeśli log nadal pokazuje inną dystrybucję lub wydanie (np. Ubuntu `precise`),
+sprawdź ustawienia live-build w `/etc/live/build.conf` i upewnij się, że
+używasz aktualnego `build.sh` oraz `auto/config` z projektu. Po wcześniejszej
+nieudanej próbie można usunąć wygenerowane pliki/cache live-build, uruchamiając
+w katalogu projektu `sudo lb clean --purge`, a następnie ponowić
+`sudo ./build.sh`.
+
 Wynikiem jest hybrydowy obraz `proxmox-recovery-toolkit-amd64.iso` w katalogu
 głównym projektu. Konfiguracja obrazu obejmuje start BIOS/ISOLINUX oraz UEFI
 przez GRUB EFI. Budowanie wymaga połączenia z Internetem, miejsca na pobrane

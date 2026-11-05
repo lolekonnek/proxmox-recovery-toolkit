@@ -62,8 +62,10 @@ zainstalowanie pakietów o podobnych nazwach z repozytorium danej dystrybucji
 nie gwarantuje, że `live-build` będzie dostępny lub że obraz poprawnie się
 zbuduje.
 
-Skrypt budujący jawnie uruchamia `auto/config`, aby użyć dystrybucji Debian
-Bookworm określonej przez projekt zamiast przypadkowych ustawień hosta.
+Skrypt budujący jawnie uruchamia `auto/config` przez `sh`, więc nie wymaga,
+aby system zachował bit wykonywalności tego pliku po pobraniu archiwum ZIP.
+Konfiguracja wybiera dystrybucję Debian Bookworm określoną przez projekt,
+zamiast przypadkowych ustawień hosta.
 Jeśli log nadal pokazuje inną dystrybucję lub wydanie (np. Ubuntu `precise`),
 sprawdź ustawienia live-build w `/etc/live/build.conf` i upewnij się, że
 używasz aktualnego `build.sh` oraz `auto/config` z projektu. Po wcześniejszej

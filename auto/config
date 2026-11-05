@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+lb config noauto \
+    --mode debian \
+    --distribution bookworm \
+    --architectures amd64 \
+    --binary-images iso-hybrid \
+    --bootloaders "syslinux grub-efi" \
+    --archive-areas "main contrib non-free-firmware" \
+    --debian-installer none \
+    --iso-application "Proxmox Recovery Toolkit" \
+    --iso-publisher "Proxmox Recovery Toolkit" \
+    --iso-volume "PROXMOX_RECOVERY"

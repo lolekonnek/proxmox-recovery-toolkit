@@ -1,0 +1,8 @@
+whiptail
+python3
+sudo
+util-linux
+lvm2
+zfsutils-linux
+iproute2
+systemd-sysv

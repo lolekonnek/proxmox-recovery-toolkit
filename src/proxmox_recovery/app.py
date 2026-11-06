@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from . import diagnostics, discovery
+from . import diagnostics, discovery, password_recovery
 
 
 LOGGER = logging.getLogger("proxmox_recovery")
@@ -112,7 +112,10 @@ def main() -> None:
         "2": ("Diagnostyka dysków i partycji", diagnostics.disk_report),
         "3": ("Diagnostyka LVM", diagnostics.lvm_report),
         "4": ("Diagnostyka ZFS", diagnostics.zfs_report),
-        "5": ("Odzyskiwanie dostępu", lambda: RECOVERY_GUIDANCE),
+        "5": (
+            "Odzyskiwanie dostępu",
+            password_recovery.password_recovery_report,
+        ),
         "6": ("Dziennik działań", lambda: LOG_PATH.read_text(encoding="utf-8")),
     }
 

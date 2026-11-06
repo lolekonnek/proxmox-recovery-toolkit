@@ -1,9 +1,8 @@
 # Proxmox Recovery Toolkit
 
 Polskojęzyczne, uruchamiane z nośnika USB środowisko Debian Live do
-diagnostyki dysków i wykrywania kandydatów na instalacje Proxmox VE.
-Narzędzie nie montuje znalezionych systemów, nie importuje pul ZFS i nie
-zmienia danych na dyskach użytkownika.
+diagnostyki dysków, wykrywania kandydatów na instalacje Proxmox VE oraz
+zmiany hasła użytkownika `root` w odzyskiwanej instalacji.
 
 ## Zakres i bezpieczeństwo
 
@@ -14,14 +13,23 @@ zmienia danych na dyskach użytkownika.
 - Wszystkie polecenia diagnostyczne są uruchamiane bez opcji zapisujących.
   `pvs`, `vgs` i `lvs` dostają `--readonly`; `zpool import` służy wyłącznie
   do wyświetlenia pul dostępnych do importu i nie importuje żadnej z nich.
-- Nie uruchamia `mount`, `chroot`, `vgchange`, `zpool import <nazwa>`,
-  `passwd`, narzędzi formatowania ani narzędzi naprawczych.
+- Funkcja **„Zmiana hasła root”** celowo wykonuje operacje zapisujące na
+  odzyskiwanej instalacji:
+  - `vgchange -ay pve` — aktywacja woluminów LVM grupy `pve`,
+  - `mount -o rw /dev/pve/root /mnt` — montowanie systemu głównego w trybie
+    zapisu,
+  - bind-mounty `/dev`, `/proc`, `/sys`, `/run` do `/mnt/...`,
+  - `chroot /mnt /usr/bin/passwd root` — interaktywna zmiana hasła `root`,
+  - `umount` wszystkich punktów montowania po zakończeniu.
+- Narzędzie **nie** uruchamia `zpool import <nazwa>`, nie formatuje dysków
+  i nie korzysta z narzędzi naprawczych (np. `fsck`, `mdadm --create`).
 - Dziennik działań jest zapisywany w pamięci środowiska Live pod
   `/var/log/proxmox-recovery-toolkit.log`, a nie na skanowanych dyskach.
 
-Opcja „Odzyskiwanie dostępu” nie resetuje hasła. Przypomina o użyciu
-autoryzowanej konsoli administracyjnej i oficjalnej dokumentacji Proxmox VE.
-Operacje zmieniające uwierzytelnianie są celowo poza zakresem tego narzędzia.
+Zmiana hasła `root` jest operacją wrażliwą i powinna być wykonywana wyłącznie
+na sprzęcie, do którego masz uprawnienia (własny serwer, sprzęt powierzony
+przez pracodawcę, macierz laboratoryjna). Nie uruchamiaj tej funkcji na
+sprzęcie, do którego nie masz autoryzacji.
 
 ## Budowanie obrazu ISO
 
@@ -108,18 +116,41 @@ Menu oferuje:
 2. Diagnostykę dysków i partycji przez `lsblk` oraz `blkid`.
 3. Raporty LVM w trybie `--readonly`.
 4. Listę pul ZFS możliwych do wykrycia bez ich importowania.
-5. Informacje o bezpiecznych, autoryzowanych ścieżkach odzyskiwania.
+5. **Zmianę hasła `root`** w odzyskiwanej instalacji Proxmox VE
+   (`vgchange -ay pve` → `mount` → bind-mounty → `chroot` → `passwd root`
+   → `umount`).
 6. Dziennik działań bieżącej sesji.
 7. Potwierdzone wyłączenie komputera.
 
-Skanowanie nie wybiera ani nie modyfikuje dysku. Ponieważ narzędzie nie
-montuje systemów plików, nie potwierdza zawartości `/etc/pve` ani nie może
-gwarantować, że znalezione sygnatury należą do działającej instalacji PVE.
+### Jak przebiega zmiana hasła `root`
+
+Po wybraniu opcji 5 narzędzie wykonuje kolejno:
+
+1. `vgchange -ay pve` — uaktywnia woluminy LVM grupy `pve`. Bez tego kroku
+   urządzenie `/dev/pve/root` zwykle nie istnieje i montowanie się nie uda.
+2. `mount -o rw /dev/pve/root /mnt` — montuje system główny w trybie zapisu.
+3. Bind-mount `/dev`, `/proc`, `/sys`, `/run` do `/mnt/dev`, `/mnt/proc`,
+   `/mnt/sys`, `/mnt/run` — bez nich `passwd` w `chroot` nie działa
+   poprawnie (brak `/dev/tty`, `/proc` itd.).
+4. `chroot /mnt /usr/bin/passwd root` — uruchamiane w pseudo-terminalu (PTY).
+   Nowe hasło wpisujesz **bezpośrednio w konsoli**, nie w kodzie programu;
+   hasło nie jest nigdzie zapisywane przez narzędzie.
+5. `umount` wszystkich punktów montowania w odwrotnej kolejności
+   (`/run`, `/sys`, `/proc`, `/dev`, `/mnt`).
+
+Po zakończeniu możesz zrestartować komputer i zalogować się do Proxmox VE
+nowym hasłem `root`.
+
+Skanowanie (opcje 1–4) nie wybiera ani nie modyfikuje dysku. Ponieważ
+narzędzie nie montuje systemów plików w trybie diagnostycznym, nie
+potwierdza zawartości `/etc/pve` ani nie może zagwarantować, że znalezione
+sygnatury należą do działającej instalacji PVE — robi to dopiero opcja 5,
+i to wyłącznie na wskazanym przez Ciebie urządzeniu `/dev/pve/root`.
 
 ## Rozwój i testy
 
-Kod aplikacji znajduje się w `src/proxmox_recovery/`. Do testów nie są
-wymagane uprawnienia roota:
+Kod aplikacji znajduje się w `src/proxmox_recovery/`. Do testów jednostkowych
+nie są wymagane uprawnienia roota:
 
 ```sh
 python3 -m unittest discover -s tests -v
@@ -129,3 +160,7 @@ ZFS jest dostarczany przez pakiety Debiana z sekcji `contrib`; moduł kernela
 jest zależny od kernela obrazu Live i może być niedostępny w niektórych
 konfiguracjach sprzętowych. Brak polecenia lub błąd sondowania jest
 wyświetlany w raporcie i rejestrowany, nie zastępuje się go fikcyjnym wynikiem.
+
+Testy integracyjne funkcji zmiany hasła (opcja 5) wymagają środowiska z
+zamontowanym `/dev/pve/root` i uprawnień roota — nie są uruchamiane w
+standardowym `unittest discover`.

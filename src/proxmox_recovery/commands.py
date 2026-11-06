@@ -61,6 +61,87 @@ def run_readonly(command: Sequence[str], timeout: int = 30) -> CommandResult:
         )
     return result
 
+def run_system_command(
+    command: Sequence[str],
+    timeout: int = 30,
+) -> CommandResult:
+    """
+    Uruchamia kontrolowane polecenie systemowe.
+
+    Nie korzysta z powłoki systemowej.
+    Nie zapewnia automatycznej autoryzacji operacji.
+    """
+
+    args = tuple(command)
+
+    if not args:
+        raise ValueError("Nie można uruchomić pustego polecenia.")
+
+    if any(not isinstance(arg, str) or "\x00" in arg for arg in args):
+        raise ValueError("Nieprawidłowy argument polecenia.")
+
+    if timeout <= 0:
+        raise ValueError("Limit czasu musi być większy od zera.")
+
+    if shutil.which(args[0]) is None:
+        raise FileNotFoundError(
+            f"Brak wymaganego polecenia: {args[0]}"
+        )
+
+    LOGGER.info(
+        "Uruchamiam kontrolowane polecenie systemowe: %s",
+        args[0],
+    )
+
+    try:
+        completed = subprocess.run(
+            args,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            shell=False,
+        )
+
+    except subprocess.TimeoutExpired as error:
+        LOGGER.error(
+            "Przekroczono limit czasu polecenia: %s",
+            args[0],
+        )
+        raise TimeoutError(
+            f"Przekroczono limit {timeout} s dla: {args[0]}"
+        ) from error
+
+    except OSError as error:
+        LOGGER.exception(
+            "Nie udało się uruchomić polecenia: %s",
+            args[0],
+        )
+        raise RuntimeError(
+            f"Nie udało się uruchomić {args[0]}: {error}"
+        ) from error
+
+    result = CommandResult(
+        command=args,
+        returncode=completed.returncode,
+        stdout=completed.stdout.strip(),
+        stderr=completed.stderr.strip(),
+    )
+
+    if result.returncode == 0:
+        LOGGER.info(
+            "Polecenie systemowe zakończone powodzeniem: %s",
+            args[0],
+        )
+    else:
+        LOGGER.warning(
+            "Polecenie %s zakończone kodem %d: %s",
+            args[0],
+            result.returncode,
+            result.stderr,
+        )
+
+    return result
 
 def render_result(result: CommandResult) -> str:
     output = result.stdout or "(brak danych na standardowym wyjściu)"
